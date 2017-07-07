@@ -5,6 +5,7 @@ class WP_GraphQL_Test_Comment_Connection_Query_Args extends WP_UnitTestCase {
 	public $current_date;
 	public $current_date_gmt;
 	public $admin;
+	private $comment_object_return;
 
 	public function setUp() {
 		parent::setUp();
@@ -30,24 +31,30 @@ class WP_GraphQL_Test_Comment_Connection_Query_Args extends WP_UnitTestCase {
 
 	public function createCommentObject( $args = [] ) {
 		$defaults = [
-			'comment_author'   => $this->admin,
-			'author_email'     => 'user@test.com',
-			'comment_content'  => 'Test comment content',
-			'comment_approved' => 1,
+			'comment_author'       => $this->admin,
+			'comment_author_email' => 'admin@example.org',
+			'comment_content'      => 'Test comment content',
+			'comment_approved'     => 1,
 		];
 
 		$args = array_merge( $defaults, $args );
 
 		$comment_id = $this->factory->comment->create( $args );
 
-		return $comment_id;
+		$this->comment_object_return = array( 'comment_id'           => $comment_id,
+		                                      'comment_author_email' => $args['comment_author_email']
+		);
+
+		return $this->comment_object_return;
 	}
 
 	public function create_comments() {
 		$created_comments = [];
 
 		for ( $i = 1; $i <= 10; $i ++ ) {
-			$created_comments[ $i ] = $this->createCommentObject( [ 'comment_content' => $i ] );
+			$created_comments[ $i ] = $this->createCommentObject( [
+				'comment_content' => $i
+			] );
 		}
 
 		return $created_comments;
@@ -55,11 +62,11 @@ class WP_GraphQL_Test_Comment_Connection_Query_Args extends WP_UnitTestCase {
 	}
 
 	public function testCommentConnectionQueryArgsAuthorEmail() {
-		$author_email = "user@test.com";
+		$author_email = $this->comment_object_return['comment_author_email'];
 
 		$query = '
 		{
-		  comments(where: {authorEmail: "admin@example.org"}) {
+		  comments(where: {authorEmail: "' . $author_email . '"}) {
 		    edges {
 		      node {
 		        id
